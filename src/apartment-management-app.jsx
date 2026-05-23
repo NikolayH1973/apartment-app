@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Plus, Search, TrendingUp, Users, AlertCircle, Home, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { loadAllDataFromFirebase, saveAllDataToFirebase } from './firebase';
 
 const APARTMENTS = [
   { id: 1, name: "אליאב אברהם ומירי", target_amount: 32000 },
@@ -411,7 +412,7 @@ export default function App() {
     saveToStorage('specialIncome', specialIncome);
   }, [specialIncome]);
 
-  // ===== ИНИЦИАЛИЗАЦИЯ СОСТОЯНИЯ С LOCALSTORAGE =====
+  // ===== ИНИЦИАЛИЗАЦИЯ СОСТОЯНИЯ С LOCALSTORAGE И FIREBASE =====
   const [payments, setPayments] = useState(() => loadFromStorage('payments', INIT_PAYMENTS));
   const [expenses, setExpenses] = useState(() => loadFromStorage('expenses', INIT_EXPENSES));
   const [deposits, setDeposits] = useState(() => loadFromStorage('deposits', INIT_DEPOSITS));
@@ -432,6 +433,28 @@ export default function App() {
   useEffect(() => {
     saveToStorage('deposits', deposits);
   }, [deposits]);
+
+  // ===== ЗАГРУЗКА ДАННЫХ ИЗ FIREBASE ПРИ МОНТИРОВАНИИ =====
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await loadAllDataFromFirebase();
+        if (data.payments.length > 0) setPayments(data.payments);
+        if (data.expenses.length > 0) setExpenses(data.expenses);
+        if (data.deposits.length > 0) setDeposits(data.deposits);
+        if (data.specialIncome.length > 0) setSpecialIncome(data.specialIncome);
+        console.log('✅ Данные загружены из Firebase');
+      } catch (error) {
+        console.error('❌ Ошибка при загрузке из Firebase, используем localStorage:', error);
+      }
+    };
+    loadData();
+  }, []); // Загружаем только при монтировании
+
+  // ===== СИНХРОНИЗАЦИЯ ДАННЫХ С FIREBASE =====
+  useEffect(() => {
+    if (payments.length > 0) saveAllDataToFirebase(payments, expenses, deposits, specialIncome);
+  }, [payments, expenses, deposits, specialIncome]);
 
   // חישוב יתרות
   const calcBalance = useCallback((id) => {
