@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Search, TrendingUp, DollarSign, Users, AlertCircle, Home, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { Plus, Search, TrendingUp, Users, AlertCircle, Home, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 
 const APARTMENTS = [
   { id: 1, name: "אליאב אברהם ומירי", target_amount: 32000 },
@@ -369,7 +369,6 @@ const S = {
 };
 
 export default function App() {
-    const [hasSearched, setHasSearched] = useState(false);
   const [mode, setMode] = useState('home');
   const [search, setSearch] = useState('');
   const [selectedApt, setSelectedApt] = useState(null);
@@ -452,7 +451,7 @@ export default function App() {
     const debtors = APARTMENTS.filter(a => calcBalance(a.id).remaining > 0)
       .sort((a, b) => calcBalance(b.id).remaining - calcBalance(a.id).remaining);
     return { totalPaid, totalExpenses, depositBalance, checkingBalance, debtors };
-  }, [payments, expenses, deposits]);
+  }, [payments, expenses, deposits, calcBalance]);
 
   // ===== FILTERED AND SORTED EXPENSES =====
   const filteredExpenses = useMemo(() => {
@@ -878,7 +877,7 @@ export default function App() {
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && setSelectedApt(APARTMENTS.find(a => a.id === +search) ? +search : null)}
                 placeholder="הזן מספר דירה..." />
-              <button style={S.searchBtn} onClick={() => { setHasSearched(true); setSelectedApt(APARTMENTS.find(a => a.id === parseInt(search)) ? parseInt(search) : null); }}>
+              <button style={S.searchBtn} onClick={() => { setSelectedApt(APARTMENTS.find(a => a.id === parseInt(search)) ? parseInt(search) : null); }}>
                 <Search size={20} /> חפש
               </button>
             </div>
