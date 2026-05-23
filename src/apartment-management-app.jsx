@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Plus, Search, TrendingUp, Users, AlertCircle, Home, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 
 const APARTMENTS = [
@@ -434,12 +434,12 @@ export default function App() {
   }, [deposits]);
 
   // חישוב יתרות
-  const calcBalance = (id) => {
+  const calcBalance = useCallback((id) => {
     const apt = APARTMENTS.find(a => a.id === id);
     const paid = payments.filter(p => p.apartment_id === id).reduce((s, p) => s + p.amount, 0);
     const target = apt?.target_amount || 32000;
     return { paid, target, remaining: target - paid, percent: Math.min(100, (paid / target) * 100) };
-  };
+  }, [payments]);
 
   const stats = useMemo(() => {
     const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
