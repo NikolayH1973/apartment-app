@@ -434,15 +434,34 @@ export default function App() {
     saveToStorage('deposits', deposits);
   }, [deposits]);
 
+  // ===== ДЕУДУПЛИКАЦИЯ ДАННЫХ =====
+  const deduplicateArray = (arr, key = 'id') => {
+    const seen = new Set();
+    return arr.filter(item => {
+      const identifier = `${item[key]}-${item.date || item.description}-${item.amount}`;
+      if (seen.has(identifier)) return false;
+      seen.add(identifier);
+      return true;
+    });
+  };
+
   // ===== ЗАГРУЗКА ДАННЫХ ИЗ FIREBASE ПРИ МОНТИРОВАНИИ =====
   useEffect(() => {
     const loadData = async () => {
       try {
         const data = await loadAllDataFromFirebase();
-        if (data.payments.length > 0) setPayments(data.payments);
-        if (data.expenses.length > 0) setExpenses(data.expenses);
-        if (data.deposits.length > 0) setDeposits(data.deposits);
-        if (data.specialIncome.length > 0) setSpecialIncome(data.specialIncome);
+        if (data.payments.length > 0) {
+          setPayments(deduplicateArray(data.payments, 'apartment_id'));
+        }
+        if (data.expenses.length > 0) {
+          setExpenses(deduplicateArray(data.expenses));
+        }
+        if (data.deposits.length > 0) {
+          setDeposits(deduplicateArray(data.deposits));
+        }
+        if (data.specialIncome.length > 0) {
+          setSpecialIncome(deduplicateArray(data.specialIncome));
+        }
         console.log('✅ Данные загружены из Firebase');
       } catch (error) {
         console.error('❌ Ошибка при загрузке из Firebase, используем localStorage:', error);
@@ -451,9 +470,15 @@ export default function App() {
     loadData();
   }, []); // Загружаем только при монтировании
 
-  // ===== СИНХРОНИЗАЦИЯ ДАННЫХ С FIREBASE =====
+  // ===== СИНХРОНИЗАЦИЯ ДАННЫХ С FIREBASE (Debounced) =====
   useEffect(() => {
-    if (payments.length > 0) saveAllDataToFirebase(payments, expenses, deposits, specialIncome);
+    const timer = setTimeout(() => {
+      if (payments.length > 0) {
+        saveAllDataToFirebase(payments, expenses, deposits, specialIncome);
+      }
+    }, 1000); // Чекаем 1 сек перед сохранением
+
+    return () => clearTimeout(timer);
   }, [payments, expenses, deposits, specialIncome]);
 
   // חישוב יתרות

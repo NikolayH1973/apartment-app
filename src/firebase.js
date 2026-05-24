@@ -17,9 +17,23 @@ export const db = getFirestore(app);
 
 // ===== FIRESTORE FUNCTIONS =====
 
+// Helper: Deduplicate array
+const deduplicateData = (arr, key = 'id') => {
+  const seen = new Set();
+  return arr.filter(item => {
+    const identifier = `${item[key]}-${item.date || item.description}-${item.amount}`;
+    if (seen.has(identifier)) return false;
+    seen.add(identifier);
+    return true;
+  });
+};
+
 // Save payments to Firestore
 export const savePaymentsToFirebase = async (payments) => {
   try {
+    // Deduplicate before saving
+    const cleanPayments = deduplicateData(payments, 'apartment_id');
+
     // Clear existing payments
     const paymentsRef = collection(db, 'payments');
     const existingPayments = await getDocs(paymentsRef);
@@ -27,14 +41,14 @@ export const savePaymentsToFirebase = async (payments) => {
       await deleteDoc(doc.ref);
     }
 
-    // Add new payments
-    for (const payment of payments) {
+    // Add deduplicated payments
+    for (const payment of cleanPayments) {
       await addDoc(paymentsRef, {
         ...payment,
         timestamp: new Date()
       });
     }
-    console.log('✅ Платежи сохранены в Firebase');
+    console.log('✅ Платежи сохранены в Firebase (дедупликация выполнена)');
   } catch (error) {
     console.error('❌ Ошибка при сохранении платежей:', error);
   }
@@ -60,19 +74,21 @@ export const loadPaymentsFromFirebase = async () => {
 // Save expenses to Firestore
 export const saveExpensesToFirebase = async (expenses) => {
   try {
+    const cleanExpenses = deduplicateData(expenses);
+
     const expensesRef = collection(db, 'expenses');
     const existingExpenses = await getDocs(expensesRef);
     for (const doc of existingExpenses.docs) {
       await deleteDoc(doc.ref);
     }
 
-    for (const expense of expenses) {
+    for (const expense of cleanExpenses) {
       await addDoc(expensesRef, {
         ...expense,
         timestamp: new Date()
       });
     }
-    console.log('✅ Расходы сохранены в Firebase');
+    console.log('✅ Расходы сохранены в Firebase (дедупликация выполнена)');
   } catch (error) {
     console.error('❌ Ошибка при сохранении расходов:', error);
   }
@@ -98,19 +114,21 @@ export const loadExpensesFromFirebase = async () => {
 // Save deposits to Firestore
 export const saveDepositsToFirebase = async (deposits) => {
   try {
+    const cleanDeposits = deduplicateData(deposits);
+
     const depositsRef = collection(db, 'deposits');
     const existingDeposits = await getDocs(depositsRef);
     for (const doc of existingDeposits.docs) {
       await deleteDoc(doc.ref);
     }
 
-    for (const deposit of deposits) {
+    for (const deposit of cleanDeposits) {
       await addDoc(depositsRef, {
         ...deposit,
         timestamp: new Date()
       });
     }
-    console.log('✅ Депозиты сохранены в Firebase');
+    console.log('✅ Депозиты сохранены в Firebase (дедупликация выполнена)');
   } catch (error) {
     console.error('❌ Ошибка при сохранении депозитов:', error);
   }
@@ -136,19 +154,21 @@ export const loadDepositsFromFirebase = async () => {
 // Save special income to Firestore
 export const saveSpecialIncomeToFirebase = async (specialIncome) => {
   try {
+    const cleanIncome = deduplicateData(specialIncome);
+
     const incomeRef = collection(db, 'specialIncome');
     const existingIncome = await getDocs(incomeRef);
     for (const doc of existingIncome.docs) {
       await deleteDoc(doc.ref);
     }
 
-    for (const income of specialIncome) {
+    for (const income of cleanIncome) {
       await addDoc(incomeRef, {
         ...income,
         timestamp: new Date()
       });
     }
-    console.log('✅ Доп. доходы сохранены в Firebase');
+    console.log('✅ Доп. доходы сохранены в Firebase (дедупликация выполнена)');
   } catch (error) {
     console.error('❌ Ошибка при сохранении доп. доходов:', error);
   }
