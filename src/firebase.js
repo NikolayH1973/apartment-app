@@ -321,13 +321,31 @@ export const saveAllDataToFirebase = async (payments, expenses, deposits, specia
 };
 
 // Export all data to Excel with formatting
-export const exportToExcel = async () => {
+export const exportToExcel = async (apartments = []) => {
   try {
     // Load all data from Firebase
-    const payments = await loadPaymentsFromFirebase();
-    const expenses = await loadExpensesFromFirebase();
-    const deposits = await loadDepositsFromFirebase();
-    const specialIncome = await loadSpecialIncomeFromFirebase();
+    let payments = await loadPaymentsFromFirebase();
+    let expenses = await loadExpensesFromFirebase();
+    let deposits = await loadDepositsFromFirebase();
+    let specialIncome = await loadSpecialIncomeFromFirebase();
+
+    // Enrich data with apartment names
+    const apartmentMap = {};
+    apartments.forEach(apt => {
+      apartmentMap[apt.id] = apt.name;
+    });
+
+    // Add apartment names to payments
+    payments = payments.map(p => ({
+      ...p,
+      tenant_name: apartmentMap[p.apartment_id] || `דירה ${p.apartment_id}`
+    }));
+
+    // Add apartment names to deposits
+    deposits = deposits.map(d => ({
+      ...d,
+      tenant_name: apartmentMap[d.apartment_id] || `דירה ${d.apartment_id}`
+    }));
 
     // Create workbook
     const workbook = XLSX.utils.book_new();
