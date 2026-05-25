@@ -286,24 +286,8 @@ const INIT_DEPOSITS = [
   { id: 3, date: "2026-03-13", type: 'out', description: "משיכה מפיקדון", amount: 271200, receipt_number: "262" },
 ];
 
-// ========== HELPERS לOCAL STORAGE ==========
-const loadFromStorage = (key, defaultValue) => {
-  try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : defaultValue;
-  } catch (e) {
-    console.error(`שגיאה בעת טעינת ${key}:`, e);
-    return defaultValue;
-  }
-};
-
-const saveToStorage = (key, value) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
-    console.error(`שגיאה בעת שמירת ${key}:`, e);
-  }
-};
+// ========== FIREBASE ONLY - NO LOCAL STORAGE ==========
+// כל הנתונים מתנהלים דרך Firebase בלבד
 
 // ========== STYLES ==========
 const S = {
@@ -398,7 +382,7 @@ export default function App() {
   const [editExpenseForm, setEditExpenseForm] = useState({ description: '', amount: '', date: '', receipt: '' });
 
   // ===== SPECIAL INCOME =====
-  const [specialIncome, setSpecialIncome] = useState(() => loadFromStorage('specialIncome', []));
+  const [specialIncome, setSpecialIncome] = useState([]);
   const [newSpecialIncome, setNewSpecialIncome] = useState({ description: '', amount: '', date: '', receipt: '' });
 
   // ===== ADMIN AUTHENTICATION =====
@@ -407,79 +391,62 @@ export default function App() {
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const ADMIN_PASSWORD = 'Nikolay1973#';
 
-  // Save special income to localStorage
-  useEffect(() => {
-    saveToStorage('specialIncome', specialIncome);
-  }, [specialIncome]);
-
-  // ===== ИНИЦИАЛИЗАЦИЯ СОСТОЯНИЯ С LOCALSTORAGE И FIREBASE =====
-  const [payments, setPayments] = useState(() => loadFromStorage('payments', INIT_PAYMENTS));
-  const [expenses, setExpenses] = useState(() => loadFromStorage('expenses', INIT_EXPENSES));
-  const [deposits, setDeposits] = useState(() => loadFromStorage('deposits', INIT_DEPOSITS));
+  // ===== STATE - INITIALIZED WITH INIT DATA =====
+  const [payments, setPayments] = useState(INIT_PAYMENTS);
+  const [expenses, setExpenses] = useState(INIT_EXPENSES);
+  const [deposits, setDeposits] = useState(INIT_DEPOSITS);
 
   const [newPay, setNewPay] = useState({ apartment_id: '', amount: '', date: '', receipt: '' });
   const [newExp, setNewExp] = useState({ description: '', amount: '', date: '', receipt: '' });
   const [newDep, setNewDep] = useState({ type: 'in', amount: '', date: '', receipt: '' });
 
-  // ===== СИНХРОНИЗАЦИЯ ДАННЫХ С LOCALSTORAGE =====
-  useEffect(() => {
-    saveToStorage('payments', payments);
-  }, [payments]);
+  // ===== DATA LOADED FLAG =====
+  const [dataLoaded, setDataLoaded] = useState(false);
 
+  // ===== ИНИЦИАЛИЗАЦИЯ: ЗАГРУЗКА ИЗ FIREBASE ИЛИ СОХРАНЕНИЕ INIT ДАННЫХ =====
   useEffect(() => {
-    saveToStorage('expenses', expenses);
-  }, [expenses]);
-
-  useEffect(() => {
-    saveToStorage('deposits', deposits);
-  }, [deposits]);
-
-  // ===== ДЕУДУПЛИКАЦИЯ ДАННЫХ =====
-  const deduplicateArray = (arr, key = 'id') => {
-    const seen = new Set();
-    return arr.filter(item => {
-      const identifier = `${item[key]}-${item.date || item.description}-${item.amount}`;
-      if (seen.has(identifier)) return false;
-      seen.add(identifier);
-      return true;
-    });
-  };
-
-  // ===== ЗАГРУЗКА ДАННЫХ ИЗ FIREBASE ПРИ МОНТИРОВАНИИ =====
-  useEffect(() => {
-    const loadData = async () => {
+    const initializeData = async () => {
       try {
-        const data = await loadAllDataFromFirebase();
-        if (data.payments.length > 0) {
-          setPayments(deduplicateArray(data.payments, 'apartment_id'));
+        const firebaseData = await loadAllDataFromFirebase();
+
+        // Если Firebase пуст - сохраняем начальные данные
+        if (firebaseData.payments.length === 0 && firebaseData.expenses.length === 0) {
+          console.log('📝 Firebase пуст. Сохраняем начальные данные...');
+          await saveAllDataToFirebase(INIT_PAYMENTS, INIT_EXPENSES, INIT_DEPOSITS, []);
+          console.log('✅ Начальные данные сохранены в Firebase');
+        } else {
+          // Если Firebase не пуст - загружаем оттуда
+          console.log('📥 Загружаем данные из Firebase');
+          setPayments(firebaseData.payments);
+          setExpenses(firebaseData.expenses);
+          setDeposits(firebaseData.deposits);
+          setSpecialIncome(firebaseData.specialIncome || []);
+          console.log('✅ Данные загружены из Firebase');
         }
-        if (data.expenses.length > 0) {
-          setExpenses(deduplicateArray(data.expenses));
-        }
-        if (data.deposits.length > 0) {
-          setDeposits(deduplicateArray(data.deposits));
-        }
-        if (data.specialIncome.length > 0) {
-          setSpecialIncome(deduplicateArray(data.specialIncome));
-        }
-        console.log('✅ Данные загружены из Firebase');
+
+        setDataLoaded(true);
       } catch (error) {
-        console.error('❌ Ошибка при загрузке из Firebase, используем localStorage:', error);
+        console.error('❌ Ошибка при инициализации:', error);
+        setDataLoaded(true);
       }
     };
-    loadData();
+
+    initializeData();
   }, []); // Загружаем только при монтировании
 
-  // ===== СИНХРОНИЗАЦИЯ ДАННЫХ С FIREBASE (Debounced) =====
+  // ===== СОХРАНЕНИЕ В FIREBASE (только после загрузки данных) =====
   useEffect(() => {
+    if (!dataLoaded) return; // Не сохраняем до загрузки данных
+
     const timer = setTimeout(() => {
       if (payments.length > 0) {
         saveAllDataToFirebase(payments, expenses, deposits, specialIncome);
+        console.log('💾 Данные сохранены в Firebase');
       }
-    }, 1000); // Чекаем 1 сек перед сохранением
+    }, 1500); // Чекаем 1.5 сек перед сохранением
 
     return () => clearTimeout(timer);
-  }, [payments, expenses, deposits, specialIncome]);
+  }, [payments, expenses, deposits, specialIncome, dataLoaded]);
 
   // חישוב יתרות
   const calcBalance = useCallback((id) => {
