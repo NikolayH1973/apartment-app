@@ -391,10 +391,10 @@ export default function App() {
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const ADMIN_PASSWORD = 'Nikolay1973#';
 
-  // ===== STATE - INITIALIZED WITH INIT DATA =====
-  const [payments, setPayments] = useState(INIT_PAYMENTS);
-  const [expenses, setExpenses] = useState(INIT_EXPENSES);
-  const [deposits, setDeposits] = useState(INIT_DEPOSITS);
+  // ===== STATE - INITIALIZED EMPTY, LOAD FROM FIREBASE =====
+  const [payments, setPayments] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [deposits, setDeposits] = useState([]);
 
   const [newPay, setNewPay] = useState({ apartment_id: '', amount: '', date: '', receipt: '' });
   const [newExp, setNewExp] = useState({ description: '', amount: '', date: '', receipt: '' });
@@ -403,39 +403,27 @@ export default function App() {
   // ===== DATA LOADED FLAG =====
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  // ===== ИНИЦИАЛИЗАЦИЯ: ЗАГРУЗКА ИЗ FIREBASE ИЛИ СОХРАНЕНИЕ INIT ДАННЫХ =====
+  // ===== ИНИЦИАЛИЗАЦИЯ: ЗАГРУЗКА ИЗ FIREBASE (ЧИСТАЯ АРХИТЕКТУРА) =====
   useEffect(() => {
-    const initializeData = async () => {
+    const loadData = async () => {
       try {
+        console.log('📥 Загружаем данные из Firebase...');
         const firebaseData = await loadAllDataFromFirebase();
 
-        // Если payments пусты - сохраняем начальные данные
-        if (firebaseData.payments.length === 0) {
-          console.log('📝 Payments пусты. Сохраняем INIT_PAYMENTS в Firebase...');
-          await saveAllDataToFirebase(INIT_PAYMENTS, INIT_EXPENSES, INIT_DEPOSITS, []);
-          console.log('✅ Начальные данные сохранены в Firebase');
-          // После сохранения - используем начальные данные
-          setPayments(INIT_PAYMENTS);
-          setExpenses(INIT_EXPENSES);
-          setDeposits(INIT_DEPOSITS);
-        } else {
-          // Если payments НЕ пусты - загружаем все из Firebase
-          console.log('📥 Загружаем данные из Firebase');
-          setPayments(firebaseData.payments);
-          setExpenses(firebaseData.expenses);
-          setDeposits(firebaseData.deposits);
-          setSpecialIncome(firebaseData.specialIncome || []);
-          console.log('✅ Данные загружены из Firebase');
-        }
+        setPayments(firebaseData.payments);
+        setExpenses(firebaseData.expenses);
+        setDeposits(firebaseData.deposits);
+        setSpecialIncome(firebaseData.specialIncome || []);
 
+        console.log('✅ Данные загружены из Firebase');
         setDataLoaded(true);
       } catch (error) {
-        console.error('❌ Ошибка при инициализации:', error);
+        console.error('❌ Ошибка при загрузке:', error);
         setDataLoaded(true);
       }
     };
 
-    initializeData();
+    loadData();
   }, []); // Загружаем только при монтировании
 
   // ===== СОХРАНЕНИЕ В FIREBASE (только после загрузки данных) =====
@@ -604,6 +592,43 @@ export default function App() {
     setDeposits([...deposits, { id: Date.now(), type: newDep.type, description: desc, amount: +newDep.amount, date: newDep.date || new Date().toISOString().split('T')[0], receipt_number: newDep.receipt }]);
     setNewDep({ type: 'in', amount: '', date: '', receipt: '' });
     alert(`✅ ${desc} נוספה!`);
+  };
+
+  // ===== LOAD INITIAL DATA (CLEAN ARCHITECTURE) =====
+  const loadInitialData = async () => {
+    if (!window.confirm('זה יטען את כל הנתונים ההתחלתיים לענן.\nהנתונים הקיימים לא יימחקו, רק יתווסף נתונים חדשים.\n\nהמשך?')) {
+      return;
+    }
+
+    try {
+      console.log('💾 טוען נתונים התחלתיים לFirebase...');
+      // Merge INIT_PAYMENTS with existing payments (avoid duplicates by ID)
+      const existingIds = new Set(payments.map(p => p.id));
+      const newPayments = INIT_PAYMENTS.filter(p => !existingIds.has(p.id));
+      const mergedPayments = [...payments, ...newPayments];
+
+      const existingExpenseIds = new Set(expenses.map(e => e.id));
+      const newExpenses = INIT_EXPENSES.filter(e => !existingExpenseIds.has(e.id));
+      const mergedExpenses = [...expenses, ...newExpenses];
+
+      const existingDepositIds = new Set(deposits.map(d => d.id));
+      const newDeposits = INIT_DEPOSITS.filter(d => !existingDepositIds.has(d.id));
+      const mergedDeposits = [...deposits, ...newDeposits];
+
+      // Save to Firebase
+      await saveAllDataToFirebase(mergedPayments, mergedExpenses, mergedDeposits, specialIncome);
+
+      // Update state
+      setPayments(mergedPayments);
+      setExpenses(mergedExpenses);
+      setDeposits(mergedDeposits);
+
+      console.log('✅ נתונים התחלתיים נטענו בהצלחה!');
+      alert(`✅ נתונים התחלתיים נטענו בהצלחה!\n\n📊 נוספו:\n${newPayments.length} תשלומים\n${newExpenses.length} הוצאות\n${newDeposits.length} פקדונות`);
+    } catch (error) {
+      console.error('❌ שגיאה בטעינת נתונים:', error);
+      alert('❌ שגיאה בטעינת הנתונים. אנא בדוק את הקונסול.');
+    }
   };
 
   // ===== INCOME EDIT FUNCTIONS =====
@@ -1694,6 +1719,39 @@ export default function App() {
             <input style={S.formInput} type="text" placeholder="מספר קבלה" value={newExp.receipt} onChange={e => setNewExp({ ...newExp, receipt: e.target.value })} />
             <button style={S.addBtn('#e53935', '#b71c1c')} onClick={addExpense}><Plus size={18} /> הוסף הוצאה</button>
           </div>
+        </div>
+
+        {/* טעינת נתונים התחלתיים */}
+        <div style={{ background: 'linear-gradient(135deg, #9c27b0, #7b1fa2)', borderRadius: '24px', padding: '32px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', marginBottom: '24px', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'white', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+            📥 טעינת נתונים התחלתיים
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.85)', marginBottom: '20px', fontSize: '15px' }}>
+            טען את כל הנתונים ההתחלתיים (181 תשלומים, 33 הוצאות, 3 פקדונות) לענן.
+            הנתונים הקיימים לא יימחקו.
+          </p>
+          <button
+            style={{
+              background: 'white',
+              color: '#7b1fa2',
+              border: 'none',
+              padding: '14px 32px',
+              borderRadius: '12px',
+              fontWeight: '700',
+              fontSize: '16px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              transition: 'transform 0.2s'
+            }}
+            onClick={loadInitialData}
+            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            📥 טעון נתונים
+          </button>
         </div>
 
         {/* ניהול פיקדון */}
