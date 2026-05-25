@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, writeBatch, doc } from 'firebase/firestore';
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC-zzUEX2EF2kCzUdaAWp4kFDpVWZTzBmQ",
