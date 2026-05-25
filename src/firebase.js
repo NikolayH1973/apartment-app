@@ -320,7 +320,7 @@ export const saveAllDataToFirebase = async (payments, expenses, deposits, specia
   }
 };
 
-// Export all data to Excel
+// Export all data to Excel with formatting
 export const exportToExcel = async () => {
   try {
     // Load all data from Firebase
@@ -329,19 +329,74 @@ export const exportToExcel = async () => {
     const deposits = await loadDepositsFromFirebase();
     const specialIncome = await loadSpecialIncomeFromFirebase();
 
-    // Create workbook with multiple sheets
+    // Create workbook
     const workbook = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(payments), 'Платежи');
-    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(expenses), 'Расходы');
-    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(deposits), 'Депозиты');
-    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(specialIncome), 'Доп. доходы');
+    // Helper function to create formatted sheet
+    const createFormattedSheet = (data, sheetName) => {
+      const ws = XLSX.utils.json_to_sheet(data);
+
+      // Set column widths
+      const colWidths = {};
+      if (data.length > 0) {
+        Object.keys(data[0]).forEach(key => {
+          colWidths[key] = 20;
+        });
+      }
+      ws['!cols'] = Object.values(colWidths).map(w => ({ wch: w }));
+
+      // Set RTL direction for Hebrew
+      ws['!dir'] = 'rtl';
+
+      // Format header row
+      const headerRowKeys = data.length > 0 ? Object.keys(data[0]) : [];
+      headerRowKeys.forEach((key, idx) => {
+        const cellRef = XLSX.utils.encode_col(idx) + '1';
+        if (ws[cellRef]) {
+          ws[cellRef].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: '366092' } },
+            alignment: { horizontal: 'center', vertical: 'center', rtl: true }
+          };
+        }
+      });
+
+      // Format number columns (денежные значения)
+      data.forEach((row, rowIdx) => {
+        headerRowKeys.forEach((key, colIdx) => {
+          const cellRef = XLSX.utils.encode_col(colIdx) + (rowIdx + 2);
+          const value = row[key];
+
+          if (typeof value === 'number' && key.toLowerCase().includes('amount')) {
+            if (ws[cellRef]) {
+              ws[cellRef].s = {
+                numFmt: '"₪"#,##0',
+                alignment: { rtl: true }
+              };
+            }
+          }
+        });
+      });
+
+      return ws;
+    };
+
+    // Add sheets with formatting
+    const paymentsSheet = createFormattedSheet(payments, 'Платежи');
+    const expensesSheet = createFormattedSheet(expenses, 'Расходы');
+    const depositsSheet = createFormattedSheet(deposits, 'Депозиты');
+    const incomeSheet = createFormattedSheet(specialIncome, 'Доп. доходы');
+
+    XLSX.utils.book_append_sheet(workbook, paymentsSheet, 'Платежи');
+    XLSX.utils.book_append_sheet(workbook, expensesSheet, 'Расходы');
+    XLSX.utils.book_append_sheet(workbook, depositsSheet, 'Депозиты');
+    XLSX.utils.book_append_sheet(workbook, incomeSheet, 'Доп. доходы');
 
     // Download file with current date
     const dateStr = new Date().toISOString().split('T')[0];
     XLSX.writeFile(workbook, `apartment-data-${dateStr}.xlsx`);
 
-    console.log('✅ Данные экспортированы в Excel');
+    console.log('✅ Данные экспортированы в Excel с форматированием');
   } catch (error) {
     console.error('❌ Ошибка при экспорте в Excel:', error);
   }
