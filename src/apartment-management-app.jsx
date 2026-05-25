@@ -894,9 +894,161 @@ export default function App() {
 
         {/* MOBILE STYLES */}
         <style>{`
-          @media (max-width: 600px) {
-            .stats-grid { grid-template-columns: 1fr !important; }
-            .cards-grid { grid-template-columns: 1fr !important; }
+          * { box-sizing: border-box; }
+
+          @media (max-width: 768px) {
+            body { font-size: 16px; }
+
+            /* HOME PAGE */
+            .homeWrap { padding: 20px 12px !important; }
+            .homeInner { max-width: 100% !important; }
+
+            /* STATS CARDS */
+            .stats-grid {
+              grid-template-columns: 1fr !important;
+              gap: 12px !important;
+              margin-bottom: 16px !important;
+            }
+            .stats-card {
+              padding: 16px !important;
+              min-height: 100px !important;
+            }
+            .stats-card h3 { font-size: 14px !important; }
+            .stats-card .stat-value { font-size: 24px !important; }
+
+            /* REPORT BUTTONS */
+            .cards-grid {
+              grid-template-columns: 1fr !important;
+              gap: 12px !important;
+            }
+            .cards-grid button {
+              padding: 14px 16px !important;
+              font-size: 14px !important;
+              min-height: 48px !important;
+            }
+
+            /* FORMS */
+            .forms-row {
+              grid-template-columns: 1fr !important;
+              gap: 16px !important;
+            }
+            .form-card {
+              padding: 16px !important;
+              border-radius: 16px !important;
+            }
+            .form-card h2 {
+              font-size: 16px !important;
+              margin-bottom: 12px !important;
+            }
+            .form-label {
+              font-size: 13px !important;
+              margin-top: 10px !important;
+            }
+            .form-select,
+            .form-input {
+              padding: 10px 12px !important;
+              font-size: 14px !important;
+              min-height: 44px !important;
+              width: 100% !important;
+            }
+            .form-button {
+              padding: 12px 16px !important;
+              font-size: 14px !important;
+              min-height: 44px !important;
+              width: 100% !important;
+              margin-top: 12px !important;
+            }
+
+            /* ADMIN PAGE */
+            .adminWrap { padding: 12px !important; }
+            .adminInner { padding: 16px !important; }
+            .adminTitle { font-size: 20px !important; }
+
+            .adminStatsRow {
+              grid-template-columns: 1fr 1fr !important;
+              gap: 12px !important;
+              margin-bottom: 16px !important;
+            }
+            .adminStatCard {
+              padding: 12px !important;
+              border-radius: 16px !important;
+            }
+            .adminStatLabel { font-size: 12px !important; }
+            .adminStatValue { font-size: 18px !important; }
+
+            /* DEPOSIT CARD */
+            .depositCard {
+              padding: 16px !important;
+              grid-template-columns: 1fr !important;
+            }
+            .depositGrid {
+              grid-template-columns: 1fr !important;
+              gap: 12px !important;
+            }
+
+            /* LISTS AND TABLES */
+            table { font-size: 13px !important; }
+            table th { padding: 8px 4px !important; }
+            table td { padding: 8px 4px !important; }
+
+            /* MODAL/DIALOG */
+            .modal-content {
+              padding: 16px !important;
+              max-width: 100% !important;
+              margin: 0 12px !important;
+            }
+            .modal-content input,
+            .modal-content select {
+              min-height: 44px !important;
+              font-size: 16px !important;
+            }
+
+            /* BUTTONS */
+            button {
+              min-height: 44px !important;
+              padding: 12px 16px !important;
+              font-size: 14px !important;
+            }
+
+            /* TEXT SIZES */
+            h1 { font-size: 24px !important; }
+            h2 { font-size: 18px !important; }
+            h3 { font-size: 16px !important; }
+            p { font-size: 14px !important; }
+
+            /* SPACING */
+            .section { margin-bottom: 16px !important; }
+          }
+
+          @media (max-width: 480px) {
+            body { font-size: 14px; }
+
+            .homeWrap { padding: 12px 8px !important; }
+
+            .stats-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
+            .stats-card { padding: 12px !important; min-height: 80px !important; }
+            .stats-card .stat-value { font-size: 20px !important; }
+
+            .cards-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
+            .cards-grid button { padding: 12px 12px !important; font-size: 12px !important; }
+
+            .forms-row { grid-template-columns: 1fr !important; gap: 12px !important; }
+            .form-card { padding: 12px !important; }
+            .form-card h2 { font-size: 14px !important; }
+
+            .adminStatsRow { grid-template-columns: 1fr !important; gap: 10px !important; }
+
+            .adminStatLabel { font-size: 11px !important; }
+            .adminStatValue { font-size: 16px !important; }
+
+            h1 { font-size: 20px !important; }
+            h2 { font-size: 16px !important; }
+            h3 { font-size: 14px !important; }
+            p { font-size: 12px !important; }
+
+            table { font-size: 11px !important; }
+            table th { padding: 6px 2px !important; }
+            table td { padding: 6px 2px !important; }
           }
         `}</style>
       </div>
