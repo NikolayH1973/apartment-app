@@ -409,13 +409,17 @@ export default function App() {
       try {
         const firebaseData = await loadAllDataFromFirebase();
 
-        // Если Firebase пуст - сохраняем начальные данные
-        if (firebaseData.payments.length === 0 && firebaseData.expenses.length === 0) {
-          console.log('📝 Firebase пуст. Сохраняем начальные данные...');
+        // Если payments пусты - сохраняем начальные данные
+        if (firebaseData.payments.length === 0) {
+          console.log('📝 Payments пусты. Сохраняем INIT_PAYMENTS в Firebase...');
           await saveAllDataToFirebase(INIT_PAYMENTS, INIT_EXPENSES, INIT_DEPOSITS, []);
           console.log('✅ Начальные данные сохранены в Firebase');
+          // После сохранения - используем начальные данные
+          setPayments(INIT_PAYMENTS);
+          setExpenses(INIT_EXPENSES);
+          setDeposits(INIT_DEPOSITS);
         } else {
-          // Если Firebase не пуст - загружаем оттуда
+          // Если payments НЕ пусты - загружаем все из Firebase
           console.log('📥 Загружаем данные из Firebase');
           setPayments(firebaseData.payments);
           setExpenses(firebaseData.expenses);
