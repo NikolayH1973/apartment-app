@@ -895,12 +895,25 @@ export default function App() {
         {/* MOBILE STYLES */}
         <style>{`
           * { box-sizing: border-box; }
+          html, body {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+            width: 100% !important;
+          }
+          body { margin: 0; padding: 0; }
 
           @media (max-width: 768px) {
             body { font-size: 16px; }
 
+            /* ALL WRAPPERS */
+            div[style*="minHeight"] { max-width: 100% !important; overflow-x: hidden !important; }
+
             /* HOME PAGE */
-            .homeWrap { padding: 20px 12px !important; }
+            .homeWrap {
+              padding: 20px 12px !important;
+              max-width: 100% !important;
+              overflow-x: hidden !important;
+            }
             .homeInner { max-width: 100% !important; }
 
             /* STATS CARDS */
