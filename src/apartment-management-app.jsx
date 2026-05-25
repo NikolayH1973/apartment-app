@@ -389,7 +389,7 @@ export default function App() {
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
   const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
-  const ADMIN_PASSWORD = 'Nikolay1973#';
+  const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'Nikolay1973#';
 
   // ===== STATE - INITIALIZED EMPTY, LOAD FROM FIREBASE =====
   const [payments, setPayments] = useState([]);
