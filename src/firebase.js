@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, addDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, writeBatch, doc } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC-zzUEX2EF2kCzUdaAWp4kFDpVWZTzBmQ",
@@ -17,24 +17,52 @@ export const db = getFirestore(app);
 
 // ===== FIRESTORE FUNCTIONS =====
 
-// Save payments to Firestore
+// Save payments to Firestore (with batch operations for safety)
 export const savePaymentsToFirebase = async (payments) => {
   try {
-    // Clear existing payments
     const paymentsRef = collection(db, 'payments');
+    const batch = writeBatch(db);
+
+    // Get existing payments
     const existingPayments = await getDocs(paymentsRef);
-    for (const doc of existingPayments.docs) {
-      await deleteDoc(doc.ref);
+    const existingMap = new Map();
+    existingPayments.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      existingMap.set(data.originalId, docSnap.ref);
+    });
+
+    // Mark which payments should exist
+    const newIds = new Set(payments.map(p => p.id));
+
+    // Delete payments that no longer exist
+    existingMap.forEach((ref, originalId) => {
+      if (!newIds.has(originalId)) {
+        batch.delete(ref);
+      }
+    });
+
+    // Add or update payments
+    for (const payment of payments) {
+      const existingRef = existingMap.get(payment.id);
+      if (existingRef) {
+        // Update existing
+        batch.update(existingRef, {
+          ...payment,
+          originalId: payment.id,
+          timestamp: new Date()
+        });
+      } else {
+        // Add new with generated ID
+        const newRef = doc(paymentsRef);
+        batch.set(newRef, {
+          ...payment,
+          originalId: payment.id,
+          timestamp: new Date()
+        });
+      }
     }
 
-    // Add payments with their original ID preserved
-    for (const payment of payments) {
-      await addDoc(paymentsRef, {
-        ...payment,
-        originalId: payment.id, // Сохраняем оригинальный ID платежа
-        timestamp: new Date()
-      });
-    }
+    await batch.commit();
     console.log('✅ Платежи сохранены в Firebase');
   } catch (error) {
     console.error('❌ Ошибка при сохранении платежей:', error);
@@ -61,22 +89,46 @@ export const loadPaymentsFromFirebase = async () => {
   }
 };
 
-// Save expenses to Firestore
+// Save expenses to Firestore (with batch operations for safety)
 export const saveExpensesToFirebase = async (expenses) => {
   try {
     const expensesRef = collection(db, 'expenses');
+    const batch = writeBatch(db);
+
     const existingExpenses = await getDocs(expensesRef);
-    for (const doc of existingExpenses.docs) {
-      await deleteDoc(doc.ref);
-    }
+    const existingMap = new Map();
+    existingExpenses.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      existingMap.set(data.originalId, docSnap.ref);
+    });
+
+    const newIds = new Set(expenses.map(e => e.id));
+
+    existingMap.forEach((ref, originalId) => {
+      if (!newIds.has(originalId)) {
+        batch.delete(ref);
+      }
+    });
 
     for (const expense of expenses) {
-      await addDoc(expensesRef, {
-        ...expense,
-        originalId: expense.id,
-        timestamp: new Date()
-      });
+      const existingRef = existingMap.get(expense.id);
+      if (existingRef) {
+        batch.update(existingRef, {
+          ...expense,
+          originalId: expense.id,
+          timestamp: new Date()
+        });
+      } else {
+        const newRef = doc(expensesRef);
+        batch.set(newRef, {
+          ...expense,
+          originalId: expense.id,
+          timestamp: new Date()
+        });
+      }
     }
+
+    await batch.commit();
     console.log('✅ Расходы сохранены в Firebase');
   } catch (error) {
     console.error('❌ Ошибка при сохранении расходов:', error);
@@ -103,22 +155,46 @@ export const loadExpensesFromFirebase = async () => {
   }
 };
 
-// Save deposits to Firestore
+// Save deposits to Firestore (with batch operations for safety)
 export const saveDepositsToFirebase = async (deposits) => {
   try {
     const depositsRef = collection(db, 'deposits');
+    const batch = writeBatch(db);
+
     const existingDeposits = await getDocs(depositsRef);
-    for (const doc of existingDeposits.docs) {
-      await deleteDoc(doc.ref);
-    }
+    const existingMap = new Map();
+    existingDeposits.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      existingMap.set(data.originalId, docSnap.ref);
+    });
+
+    const newIds = new Set(deposits.map(d => d.id));
+
+    existingMap.forEach((ref, originalId) => {
+      if (!newIds.has(originalId)) {
+        batch.delete(ref);
+      }
+    });
 
     for (const deposit of deposits) {
-      await addDoc(depositsRef, {
-        ...deposit,
-        originalId: deposit.id,
-        timestamp: new Date()
-      });
+      const existingRef = existingMap.get(deposit.id);
+      if (existingRef) {
+        batch.update(existingRef, {
+          ...deposit,
+          originalId: deposit.id,
+          timestamp: new Date()
+        });
+      } else {
+        const newRef = doc(depositsRef);
+        batch.set(newRef, {
+          ...deposit,
+          originalId: deposit.id,
+          timestamp: new Date()
+        });
+      }
     }
+
+    await batch.commit();
     console.log('✅ Депозиты сохранены в Firebase');
   } catch (error) {
     console.error('❌ Ошибка при сохранении депозитов:', error);
@@ -145,22 +221,46 @@ export const loadDepositsFromFirebase = async () => {
   }
 };
 
-// Save special income to Firestore
+// Save special income to Firestore (with batch operations for safety)
 export const saveSpecialIncomeToFirebase = async (specialIncome) => {
   try {
     const incomeRef = collection(db, 'specialIncome');
+    const batch = writeBatch(db);
+
     const existingIncome = await getDocs(incomeRef);
-    for (const doc of existingIncome.docs) {
-      await deleteDoc(doc.ref);
-    }
+    const existingMap = new Map();
+    existingIncome.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      existingMap.set(data.originalId, docSnap.ref);
+    });
+
+    const newIds = new Set(specialIncome.map(i => i.id));
+
+    existingMap.forEach((ref, originalId) => {
+      if (!newIds.has(originalId)) {
+        batch.delete(ref);
+      }
+    });
 
     for (const income of specialIncome) {
-      await addDoc(incomeRef, {
-        ...income,
-        originalId: income.id,
-        timestamp: new Date()
-      });
+      const existingRef = existingMap.get(income.id);
+      if (existingRef) {
+        batch.update(existingRef, {
+          ...income,
+          originalId: income.id,
+          timestamp: new Date()
+        });
+      } else {
+        const newRef = doc(incomeRef);
+        batch.set(newRef, {
+          ...income,
+          originalId: income.id,
+          timestamp: new Date()
+        });
+      }
     }
+
+    await batch.commit();
     console.log('✅ Доп. доходы сохранены в Firebase');
   } catch (error) {
     console.error('❌ Ошибка при сохранении доп. доходов:', error);
