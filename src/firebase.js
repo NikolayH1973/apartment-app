@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, writeBatch, doc } from 'firebase/firestore';
+import XLSX from 'xlsx';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC-zzUEX2EF2kCzUdaAWp4kFDpVWZTzBmQ",
@@ -316,5 +317,32 @@ export const saveAllDataToFirebase = async (payments, expenses, deposits, specia
     console.log('✅ Все данные сохранены в Firebase');
   } catch (error) {
     console.error('❌ Ошибка при сохранении всех данных:', error);
+  }
+};
+
+// Export all data to Excel
+export const exportToExcel = async () => {
+  try {
+    // Load all data from Firebase
+    const payments = await loadPaymentsFromFirebase();
+    const expenses = await loadExpensesFromFirebase();
+    const deposits = await loadDepositsFromFirebase();
+    const specialIncome = await loadSpecialIncomeFromFirebase();
+
+    // Create workbook with multiple sheets
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(payments), 'Платежи');
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(expenses), 'Расходы');
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(deposits), 'Депозиты');
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(specialIncome), 'Доп. доходы');
+
+    // Download file with current date
+    const dateStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(workbook, `apartment-data-${dateStr}.xlsx`);
+
+    console.log('✅ Данные экспортированы в Excel');
+  } catch (error) {
+    console.error('❌ Ошибка при экспорте в Excel:', error);
   }
 };

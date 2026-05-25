@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Plus, Search, TrendingUp, Users, AlertCircle, Home, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
-import { loadAllDataFromFirebase, saveAllDataToFirebase } from './firebase';
+import { loadAllDataFromFirebase, saveAllDataToFirebase, exportToExcel } from './firebase';
 
 const APARTMENTS = [
   { id: 1, name: "אליאב אברהם ומירי", target_amount: 32000 },
@@ -1751,6 +1751,39 @@ export default function App() {
             onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
           >
             📥 טעון נתונים
+          </button>
+        </div>
+
+        {/* ייצוא נתונים לאקסל */}
+        <div style={{ background: 'linear-gradient(135deg, #1976d2, #1565c0)', borderRadius: '24px', padding: '32px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', marginBottom: '24px', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'white', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+            📊 ייצוא נתונים לאקסל
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.85)', marginBottom: '20px', fontSize: '15px' }}>
+            הורד גיבוי של כל הנתונים שלך (תשלומים, הוצאות, פיקדונות) קובץ אקסל.
+            זה ישמש כגיבוי בטוח על המחשב שלך.
+          </p>
+          <button
+            style={{
+              background: 'white',
+              color: '#1565c0',
+              border: 'none',
+              padding: '14px 32px',
+              borderRadius: '12px',
+              fontWeight: '700',
+              fontSize: '16px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              transition: 'transform 0.2s'
+            }}
+            onClick={exportToExcel}
+            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            📊 הורד אקסל
           </button>
         </div>
 
