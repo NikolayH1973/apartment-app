@@ -27,10 +27,11 @@ export const savePaymentsToFirebase = async (payments) => {
       await deleteDoc(doc.ref);
     }
 
-    // Add payments directly without deduplication
+    // Add payments with their original ID preserved
     for (const payment of payments) {
       await addDoc(paymentsRef, {
         ...payment,
+        originalId: payment.id, // Сохраняем оригинальный ID платежа
         timestamp: new Date()
       });
     }
@@ -45,10 +46,13 @@ export const loadPaymentsFromFirebase = async () => {
   try {
     const paymentsRef = collection(db, 'payments');
     const snapshot = await getDocs(paymentsRef);
-    const payments = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const payments = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: data.originalId || doc.id // Используем originalId если есть, иначе doc.id
+      };
+    });
     console.log('✅ Платежи загружены из Firebase:', payments.length);
     return payments;
   } catch (error) {
@@ -69,6 +73,7 @@ export const saveExpensesToFirebase = async (expenses) => {
     for (const expense of expenses) {
       await addDoc(expensesRef, {
         ...expense,
+        originalId: expense.id,
         timestamp: new Date()
       });
     }
@@ -83,10 +88,13 @@ export const loadExpensesFromFirebase = async () => {
   try {
     const expensesRef = collection(db, 'expenses');
     const snapshot = await getDocs(expensesRef);
-    const expenses = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const expenses = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: data.originalId || doc.id
+      };
+    });
     console.log('✅ Расходы загружены из Firebase:', expenses.length);
     return expenses;
   } catch (error) {
@@ -107,6 +115,7 @@ export const saveDepositsToFirebase = async (deposits) => {
     for (const deposit of deposits) {
       await addDoc(depositsRef, {
         ...deposit,
+        originalId: deposit.id,
         timestamp: new Date()
       });
     }
@@ -121,10 +130,13 @@ export const loadDepositsFromFirebase = async () => {
   try {
     const depositsRef = collection(db, 'deposits');
     const snapshot = await getDocs(depositsRef);
-    const deposits = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const deposits = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: data.originalId || doc.id
+      };
+    });
     console.log('✅ Депозиты загружены из Firebase:', deposits.length);
     return deposits;
   } catch (error) {
@@ -145,6 +157,7 @@ export const saveSpecialIncomeToFirebase = async (specialIncome) => {
     for (const income of specialIncome) {
       await addDoc(incomeRef, {
         ...income,
+        originalId: income.id,
         timestamp: new Date()
       });
     }
@@ -159,10 +172,13 @@ export const loadSpecialIncomeFromFirebase = async () => {
   try {
     const incomeRef = collection(db, 'specialIncome');
     const snapshot = await getDocs(incomeRef);
-    const income = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const income = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: data.originalId || doc.id
+      };
+    });
     console.log('✅ Доп. доходы загружены из Firebase:', income.length);
     return income;
   } catch (error) {
